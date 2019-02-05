@@ -1,0 +1,7 @@
+# Elm deps
+elm-stuff/
+
+# Build
+elm.js
+elm.min.js
+
