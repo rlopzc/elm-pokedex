@@ -10,6 +10,12 @@
   <script src="elm.min.js"></script>
 </head>
 <body>
+  <div id="elm"></div>
 
+  <script>
+    Elm.Main.init({
+      node: document.getElementById('elm')
+    });
+  </script>
 </body>
 </html>
