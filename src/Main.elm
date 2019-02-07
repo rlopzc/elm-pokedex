@@ -4,6 +4,7 @@ import Browser
 import Html exposing (..)
 import Http
 import Json.Decode as Decode exposing (Decoder)
+import Parser exposing ((|.), (|=), Parser)
 import String.Extra as String
 
 
@@ -137,7 +138,7 @@ pokemonDecoder =
 idDecoder : Decoder Int
 idDecoder =
     Decode.string
-        |> Decode.andThen (maybeToDecode << parseId)
+        |> Decode.andThen (fromResult << Parser.run idParser)
 
 
 {-| The ID is in the URL sent from the backend
@@ -146,23 +147,21 @@ idDecoder =
         url =
             "https://pokeapi.co/api/v2/pokemon/1/"
 
-TODO: We could use elm/parser to parse the ID
-
 -}
-parseId : String -> Maybe Int
-parseId url =
-    url
-        |> String.dropRight 1
-        |> String.split "/"
-        |> (List.reverse >> List.head)
-        |> Maybe.andThen String.toInt
+idParser : Parser Int
+idParser =
+    Parser.succeed identity
+        |. Parser.token "https://pokeapi.co/api/v2/pokemon/"
+        |= Parser.int
+        |. Parser.symbol "/"
+        |. Parser.end
 
 
-maybeToDecode : Maybe a -> Decoder a
-maybeToDecode maybeA =
-    case maybeA of
-        Just a ->
+fromResult : Result b a -> Decoder a
+fromResult result =
+    case result of
+        Ok a ->
             Decode.succeed a
 
-        Nothing ->
+        Err _ ->
             Decode.fail "Failed to decode"
