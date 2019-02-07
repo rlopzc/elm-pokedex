@@ -2,6 +2,7 @@ module Main exposing (main)
 
 import Browser
 import Html exposing (..)
+import Html.Attributes exposing (..)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Parser exposing ((|.), (|=), Parser)
@@ -46,22 +47,39 @@ view : Model -> Html Msg
 view model =
     case model of
         Loading ->
-            text "Spinner"
+            div [ class "flex h-screen items-center" ]
+                [ h1 [ class "text-5xl flex-1 text-center loading" ]
+                    [ text "Loading"
+                    , span [] [ text "." ]
+                    , span [] [ text "." ]
+                    , span [] [ text "." ]
+                    ]
+                ]
 
         Loaded { pokemonList } ->
-            div [] <|
-                List.map viewPokemonDetails pokemonList
+            div [ class "flex" ]
+                [ div [ class "w-1/5 bg-grey-darkest max-h-screen overflow-y-auto" ]
+                    [ div [ class "mt-3" ] <|
+                        List.map viewPokemonDetails pokemonList
+                    ]
+                , div [ class "w-4/5 flex items-center" ]
+                    [ h1 [ class "text-5xl flex-1 text-center opacity-25" ] [ text "CHOOSE A POKEMON" ]
+                    ]
+                ]
 
         Errored errorMsg ->
-            text errorMsg
+            div [ class "flex items-center h-screen" ]
+                [ h1 [ class "text-5xl flex-1 text-center text-red" ] [ text errorMsg ]
+                ]
 
 
 viewPokemonDetails : Pokemon -> Html Msg
 viewPokemonDetails pokemon =
-    p []
-        [ text (String.fromInt pokemon.id)
-        , text " - "
-        , text pokemon.name
+    div [ class "flex mb-2" ]
+        [ div [ class "w-1/5  mr-2 text-right text-grey-light opacity-50" ]
+            [ text (String.fromInt pokemon.id) ]
+        , div [ class "w-4/5 text-left text-white" ]
+            [ text pokemon.name ]
         ]
 
 
@@ -82,7 +100,7 @@ update msg model =
             )
 
         GotPokemonList (Err response) ->
-            ( Errored "Something failed, contact the Administrator"
+            ( Errored "OOPS! Something failed"
             , Cmd.none
             )
 
