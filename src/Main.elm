@@ -58,12 +58,19 @@ view model =
 
         Loaded { pokemonList } ->
             div [ class "flex" ]
-                [ div [ class "w-1/5 bg-grey-darkest max-h-screen overflow-y-auto" ]
-                    [ div [ class "mt-3" ] <|
+                [ div [ class "w-1/5 bg-grey-darkest" ]
+                    [ div [ class "fixed bg-grey-dark w-inherit z-10" ]
+                        [ div [ class "px-2 py-4" ]
+                            [ h1 [ class "text-2xl text-center text-white" ]
+                                [ text "POKÉDEX" ]
+                            ]
+                        ]
+                    , div [ class "max-h-screen overflow-y-auto pt-16" ] <|
                         List.map viewPokemonDetails pokemonList
                     ]
                 , div [ class "w-4/5 flex items-center" ]
-                    [ h1 [ class "text-5xl flex-1 text-center opacity-25" ] [ text "CHOOSE A POKEMON" ]
+                    [ p [ class "text-5xl flex-1 text-center opacity-25" ]
+                        [ text "CHOOSE A POKEMON" ]
                     ]
                 ]
 
