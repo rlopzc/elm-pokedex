@@ -96,10 +96,15 @@ endpointUrl =
     "https://pokeapi.co/api/v2"
 
 
+pokemonUrl : String
+pokemonUrl =
+    endpointUrl ++ "/pokemon"
+
+
 getPokemonList : Cmd Msg
 getPokemonList =
     Http.get
-        { url = endpointUrl ++ "/pokemon?limit=151"
+        { url = pokemonUrl ++ "?limit=151"
         , expect = Http.expectJson GotPokemonList pokemonListDecoder
         }
 
@@ -151,7 +156,8 @@ idDecoder =
 idParser : Parser Int
 idParser =
     Parser.succeed identity
-        |. Parser.token "https://pokeapi.co/api/v2/pokemon/"
+        |. Parser.token pokemonUrl
+        |. Parser.symbol "/"
         |= Parser.int
         |. Parser.symbol "/"
         |. Parser.end
