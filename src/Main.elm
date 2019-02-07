@@ -82,7 +82,7 @@ view model =
 
 viewPokemonDetails : Pokemon -> Html Msg
 viewPokemonDetails pokemon =
-    div [ class "flex mb-2" ]
+    div [ class "flex mb-2 cursor-pointer" ]
         [ div [ class "w-1/5  mr-2 text-right text-grey-light opacity-50" ]
             [ text (String.fromInt pokemon.id) ]
         , div [ class "w-4/5 text-left text-white" ]
