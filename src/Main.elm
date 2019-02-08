@@ -6,7 +6,6 @@ import Html.Attributes exposing (..)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Parser exposing ((|.), (|=), Parser)
-import String.Extra as String
 
 
 
@@ -85,7 +84,7 @@ viewPokemonDetails pokemon =
     div [ class "flex mb-2 cursor-pointer" ]
         [ div [ class "w-1/5  mr-2 text-right text-grey-light opacity-50" ]
             [ text (String.fromInt pokemon.id) ]
-        , div [ class "w-4/5 text-left text-white" ]
+        , div [ class "w-4/5 text-left text-white capitalize" ]
             [ text pokemon.name ]
         ]
 
@@ -162,7 +161,7 @@ pokemonDecoder : Decoder Pokemon
 pokemonDecoder =
     Decode.map2 Pokemon
         (Decode.field "url" idDecoder)
-        (Decode.map String.toSentenceCase (Decode.field "name" Decode.string))
+        (Decode.field "name" Decode.string)
 
 
 idDecoder : Decoder Int
