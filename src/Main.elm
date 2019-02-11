@@ -3,6 +3,7 @@ module Main exposing (main)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
+import Html.Events exposing (onClick)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Parser exposing ((|.), (|=), Parser)
@@ -29,6 +30,7 @@ init =
 
 type alias Internals =
     { pokemonList : List Pokemon
+    , selectedPokemon : Maybe PokemonDetail
     }
 
 
@@ -36,6 +38,18 @@ type alias Pokemon =
     { id : Int
     , name : String
     }
+
+
+type alias PokemonDetail =
+    { id : Int
+    , name : String
+    , baseExperience : Int
+    }
+
+
+type PokemonType
+    = Poison
+    | Grass
 
 
 
@@ -95,20 +109,53 @@ viewPokemonDetails pokemon =
 
 type Msg
     = GotPokemonList (Result Http.Error (List Pokemon))
+    | SelectedPokemon Int
+    | GotPokemon (Result Http.Error PokemonDetail)
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         GotPokemonList (Ok pokemonList) ->
-            ( Loaded { pokemonList = pokemonList }
+            ( Loaded
+                { pokemonList = pokemonList
+                , selectedPokemon = Nothing
+                }
             , Cmd.none
             )
 
-        GotPokemonList (Err response) ->
+        GotPokemonList (Err httpError) ->
             ( Errored "OOPS! Something failed"
             , Cmd.none
             )
+
+        SelectedPokemon id ->
+            ( model
+            , getPokemon id
+            )
+
+        GotPokemon (Ok pokemon) ->
+            ( updateLoadedModel (\internals -> { internals | selectedPokemon = Just pokemon })
+                model
+            , Cmd.none
+            )
+
+        GotPokemon (Err httpError) ->
+            ( Errored "OOPS! Something failed while fetching a Pokemon"
+            , Cmd.none
+            )
+
+
+{-| Helper function to update the model Loaded internals
+-}
+updateLoadedModel : (Internals -> Internals) -> Model -> Model
+updateLoadedModel transform model =
+    case model of
+        Loaded internals ->
+            Loaded (transform internals)
+
+        _ ->
+            model
 
 
 
@@ -123,6 +170,14 @@ endpointUrl =
 pokemonUrl : String
 pokemonUrl =
     endpointUrl ++ "/pokemon"
+
+
+getPokemon : Int -> Cmd Msg
+getPokemon id =
+    Http.get
+        { url = pokemonUrl ++ "/" ++ String.fromInt id
+        , expect = Http.expectJson GotPokemon pokemonDetailDecoder
+        }
 
 
 getPokemonList : Cmd Msg
@@ -160,12 +215,20 @@ pokemonListDecoder =
 pokemonDecoder : Decoder Pokemon
 pokemonDecoder =
     Decode.map2 Pokemon
-        (Decode.field "url" idDecoder)
+        (Decode.field "url" urlIdDecoder)
         (Decode.field "name" Decode.string)
 
 
-idDecoder : Decoder Int
-idDecoder =
+pokemonDetailDecoder : Decoder PokemonDetail
+pokemonDetailDecoder =
+    Decode.map3 PokemonDetail
+        (Decode.field "id" Decode.int)
+        (Decode.field "name" Decode.string)
+        (Decode.field "base_experience" Decode.int)
+
+
+urlIdDecoder : Decoder Int
+urlIdDecoder =
     Decode.string
         |> Decode.andThen (fromResult << Parser.run idParser)
 
