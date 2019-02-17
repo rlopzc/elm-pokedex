@@ -8,6 +8,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder, Value)
 import JsonTree
 import Parser exposing ((|.), (|=), Parser)
+import RemoteData exposing (RemoteData)
 
 
 
@@ -31,7 +32,7 @@ init =
 
 type alias Internals =
     { pokemonList : List Pokemon
-    , selectedPokemon : Maybe PokemonDetail
+    , selectedPokemon : RemoteData String PokemonDetail
     , jsonTreeState : JsonTree.State
     }
 
@@ -64,12 +65,7 @@ view model =
     case model of
         Loading ->
             div [ class "flex h-screen items-center" ]
-                [ h1 [ class "text-5xl flex-1 text-center loading" ]
-                    [ text "Loading"
-                    , span [] [ text "." ]
-                    , span [] [ text "." ]
-                    , span [] [ text "." ]
-                    ]
+                [ viewLoadingText
                 ]
 
         Loaded { pokemonList, selectedPokemon, jsonTreeState } ->
@@ -86,12 +82,19 @@ view model =
                     ]
                 , div [ class "w-4/5 flex items-center" ]
                     [ case selectedPokemon of
-                        Nothing ->
+                        RemoteData.Success pokemon ->
+                            viewPokemonDetail pokemon jsonTreeState
+
+                        RemoteData.Loading ->
+                            viewLoadingText
+
+                        RemoteData.NotAsked ->
                             p [ class "text-5xl flex-1 text-center opacity-25" ]
                                 [ text "CHOOSE A POKEMON" ]
 
-                        Just pokemon ->
-                            viewPokemonDetail pokemon jsonTreeState
+                        RemoteData.Failure errorMsg ->
+                            p [ class "text-5xl flex-1 text-center opacity-25" ]
+                                [ text errorMsg ]
                     ]
                 ]
 
@@ -99,6 +102,16 @@ view model =
             div [ class "flex items-center h-screen" ]
                 [ h1 [ class "text-5xl flex-1 text-center text-red" ] [ text errorMsg ]
                 ]
+
+
+viewLoadingText : Html Msg
+viewLoadingText =
+    h1 [ class "text-5xl flex-1 text-center loading" ]
+        [ text "Loading"
+        , span [] [ text "." ]
+        , span [] [ text "." ]
+        , span [] [ text "." ]
+        ]
 
 
 viewPokemonIdName : Pokemon -> Html Msg
@@ -192,7 +205,7 @@ update msg model =
         GotPokemonList (Ok pokemonList) ->
             ( Loaded
                 { pokemonList = pokemonList
-                , selectedPokemon = Nothing
+                , selectedPokemon = RemoteData.NotAsked
                 , jsonTreeState = JsonTree.defaultState
                 }
             , Cmd.none
@@ -204,7 +217,7 @@ update msg model =
             )
 
         SelectedPokemon id ->
-            ( model
+            ( updateLoadedModel (\internals -> { internals | selectedPokemon = RemoteData.Loading }) model
             , getPokemon id
             )
 
@@ -221,7 +234,7 @@ update msg model =
             ( updateLoadedModel
                 (\internals ->
                     { internals
-                        | selectedPokemon = Just pokemon
+                        | selectedPokemon = RemoteData.Success pokemon
                         , jsonTreeState = initialTreeState
                     }
                 )
@@ -230,7 +243,13 @@ update msg model =
             )
 
         GotPokemon (Err httpError) ->
-            ( Errored "OOPS! Something failed while fetching a Pokemon"
+            ( updateLoadedModel
+                (\internals ->
+                    { internals
+                        | selectedPokemon = RemoteData.Failure "OOPS! Something failed while fetching a Pokemon"
+                    }
+                )
+                model
             , Cmd.none
             )
 
