@@ -193,9 +193,11 @@ padLeft id =
 
 
 type Msg
-    = GotPokemonList (Result Http.Error (List Pokemon))
-    | SelectedPokemon Int
+    = SelectedPokemon Int
+      -- HTTP
+    | GotPokemonList (Result Http.Error (List Pokemon))
     | GotPokemon (Result Http.Error PokemonDetail)
+      -- MODULE
     | GotJsonTreeMsg JsonTree.State
 
 
@@ -217,7 +219,7 @@ update msg model =
             )
 
         SelectedPokemon id ->
-            ( updateLoadedModel (\internals -> { internals | selectedPokemon = RemoteData.Loading }) model
+            ( updateInternals (\internals -> { internals | selectedPokemon = RemoteData.Loading }) model
             , getPokemon id
             )
 
@@ -231,7 +233,7 @@ update msg model =
                         Err _ ->
                             JsonTree.defaultState
             in
-            ( updateLoadedModel
+            ( updateInternals
                 (\internals ->
                     { internals
                         | selectedPokemon = RemoteData.Success pokemon
@@ -243,7 +245,7 @@ update msg model =
             )
 
         GotPokemon (Err httpError) ->
-            ( updateLoadedModel
+            ( updateInternals
                 (\internals ->
                     { internals
                         | selectedPokemon = RemoteData.Failure "OOPS! Something failed while fetching a Pokemon"
@@ -254,15 +256,15 @@ update msg model =
             )
 
         GotJsonTreeMsg jsonTreeNewState ->
-            ( updateLoadedModel (\internals -> { internals | jsonTreeState = jsonTreeNewState }) model
+            ( updateInternals (\internals -> { internals | jsonTreeState = jsonTreeNewState }) model
             , Cmd.none
             )
 
 
 {-| Helper function to update the model Loaded internals
 -}
-updateLoadedModel : (Internals -> Internals) -> Model -> Model
-updateLoadedModel transform model =
+updateInternals : (Internals -> Internals) -> Model -> Model
+updateInternals transform model =
     case model of
         Loaded internals ->
             Loaded (transform internals)
