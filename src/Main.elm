@@ -77,7 +77,7 @@ view model =
                     , div [ class "h-screen overflow-y-auto pt-16" ] <|
                         let
                             filteredPokemonList =
-                                List.filter (.name >> String.contains query) pokemonList
+                                List.filter (.name >> String.contains (String.toLower query)) pokemonList
                         in
                         input
                             [ class "block mx-auto shadow bg-transparent text-white appearance-none border rounded w-5/6 py-2 px-3 focus:text-grey-darker leading-tight focus:outline-none mb-2 focus:bg-grey-light"
