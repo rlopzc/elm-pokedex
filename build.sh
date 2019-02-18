@@ -2,8 +2,9 @@
 
 set -e
 
+mkdir -p docs
 js="elm.js"
-min="elm.min.js"
+min="docs/elm.min.js"
 
 elm make src/Main.elm --optimize --output=$js $@
 
@@ -12,3 +13,7 @@ uglifyjs $js --compress 'pure_funcs="F2,F3,F4,F5,F6,F7,F8,F9,A2,A3,A4,A5,A6,A7,A
 echo "Initial size: $(cat $js | wc -c) bytes  ($js)"
 echo "Minified size:$(cat $min | wc -c) bytes  ($min)"
 echo "Gzipped size: $(cat $min | gzip -c | wc -c) bytes"
+
+echo "Publishing app to /docs"
+cp index.html ./docs
+echo "App published"
