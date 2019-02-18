@@ -48,12 +48,8 @@ type alias PokemonDetail =
     , name : String
     , baseExperience : Int
     , raw : Value
+    , types : List String
     }
-
-
-type PokemonType
-    = Poison
-    | Grass
 
 
 
@@ -141,10 +137,8 @@ viewPokemonDetail pokemon jsonTreeState =
                     [ text "INFORMATION" ]
                 , table [ class "mx-auto w-full" ]
                     [ tbody []
-                        [ tr []
-                            [ th [] [ text "Base Exp" ]
-                            , td [] [ text (String.fromInt pokemon.baseExperience) ]
-                            ]
+                        [ row "Base Exp" (String.fromInt pokemon.baseExperience)
+                        , row "Type" (String.join ", " pokemon.types)
                         ]
                     ]
                 ]
@@ -163,6 +157,16 @@ viewPokemonDetail pokemon jsonTreeState =
 
 jsonTreeConfig =
     { onSelect = Nothing, toMsg = GotJsonTreeMsg }
+
+
+row : String -> String -> Html msg
+row description value =
+    tr []
+        [ th [ class "w-1/2 text-right" ]
+            [ text description ]
+        , td [ class "w-1/2 pl-2" ]
+            [ text value ]
+        ]
 
 
 viewSprite : Int -> Html msg
@@ -336,17 +340,23 @@ pokemonDecoder =
 
 pokemonDetailDecoder : Decoder PokemonDetail
 pokemonDetailDecoder =
-    Decode.map4 PokemonDetail
+    Decode.map5 PokemonDetail
         (Decode.field "id" Decode.int)
         (Decode.field "name" Decode.string)
         (Decode.field "base_experience" Decode.int)
         Decode.value
+        (Decode.field "types" (Decode.list typeDecoder))
 
 
 urlIdDecoder : Decoder Int
 urlIdDecoder =
     Decode.string
         |> Decode.andThen (fromResult << Parser.run idParser)
+
+
+typeDecoder : Decoder String
+typeDecoder =
+    Decode.at [ "type", "name" ] Decode.string
 
 
 {-| The ID is in the URL sent from the backend
