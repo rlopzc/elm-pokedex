@@ -3,7 +3,7 @@ module Main exposing (main)
 import Browser
 import Html exposing (..)
 import Html.Attributes exposing (..)
-import Html.Events exposing (onClick)
+import Html.Events exposing (onClick, onInput)
 import Http
 import Json.Decode as Decode exposing (Decoder, Value)
 import JsonTree
@@ -34,6 +34,7 @@ type alias Internals =
     { pokemonList : List Pokemon
     , selectedPokemon : RemoteData String PokemonDetail
     , jsonTreeState : JsonTree.State
+    , query : String
     }
 
 
@@ -64,7 +65,7 @@ view model =
                 [ viewLoadingText
                 ]
 
-        Loaded { pokemonList, selectedPokemon, jsonTreeState } ->
+        Loaded { pokemonList, selectedPokemon, jsonTreeState, query } ->
             div [ class "flex" ]
                 [ div [ class "w-1/5 bg-grey-darkest" ]
                     [ div [ class "fixed bg-grey-dark w-inherit z-10" ]
@@ -73,8 +74,18 @@ view model =
                                 [ text "POKÉDEX" ]
                             ]
                         ]
-                    , div [ class "max-h-screen overflow-y-auto pt-16" ] <|
-                        List.map viewPokemonIdName pokemonList
+                    , div [ class "h-screen overflow-y-auto pt-16" ] <|
+                        let
+                            filteredPokemonList =
+                                List.filter (.name >> String.contains query) pokemonList
+                        in
+                        input
+                            [ class "block mx-auto shadow bg-transparent text-white appearance-none border rounded w-5/6 py-2 px-3 focus:text-grey-darker leading-tight focus:outline-none mb-2 focus:bg-grey-light"
+                            , placeholder "Filter..."
+                            , onInput GotQuery
+                            ]
+                            []
+                            :: List.map viewPokemonIdName filteredPokemonList
                     ]
                 , div [ class "w-4/5 flex items-center" ]
                     [ case selectedPokemon of
@@ -198,6 +209,7 @@ padLeft id =
 
 type Msg
     = SelectedPokemon Int
+    | GotQuery String
       -- HTTP
     | GotPokemonList (Result Http.Error (List Pokemon))
     | GotPokemon (Result Http.Error PokemonDetail)
@@ -213,6 +225,7 @@ update msg model =
                 { pokemonList = pokemonList
                 , selectedPokemon = RemoteData.NotAsked
                 , jsonTreeState = JsonTree.defaultState
+                , query = ""
                 }
             , Cmd.none
             )
@@ -261,6 +274,11 @@ update msg model =
 
         GotJsonTreeMsg jsonTreeNewState ->
             ( updateInternals (\internals -> { internals | jsonTreeState = jsonTreeNewState }) model
+            , Cmd.none
+            )
+
+        GotQuery query ->
+            ( updateInternals (\internals -> { internals | query = query }) model
             , Cmd.none
             )
 
